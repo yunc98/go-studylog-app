@@ -1,0 +1,42 @@
+version: '3'
+
+services:
+  go:
+    build:
+      context: ./go
+      dockerfile: Dockerfile
+    container_name: go
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./go:/go/src
+    env_file:
+      - ./.go_env
+    environment:
+      DB_USER: root
+      DB_PASS: ${ROOT_PASS}
+      DB_NAME: ${DB_NAME}
+    ports:
+      - 8080:8080
+    depends_on:
+      - 'db'
+
+  db:
+    image: mysql:8.0.28
+    container_name: db
+    platform: linux/amd64
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${ROOT_PASS}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASS}
+      TZ: ${TZ}
+    ports:
+      - 3306:3306
+    volumes:
+      - db-store:/var/lib/mysql
+      - ./db/conf.d/my.cnf:/etc/mysql/conf.d/my.cnf
+
+volumes:
+  db-store:
