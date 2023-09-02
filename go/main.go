@@ -1,16 +1,28 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+)
+
+type Log struct {
+	Subject string
+	Duration int
+}
 
 func main() {
-	var subject string
-	var time int
+	log := inputLog()
+
+	fmt.Printf("Studied %s for %d hours\n", log.Subject, log.Duration)
+}
+
+func inputLog() Log {
+	var log Log
 
 	fmt.Print("Subject>")
-	fmt.Scan(&subject)
+	fmt.Scan(&log.Subject)
 
-	fmt.Print("Time>")
-	fmt.Scan(&time)
+	fmt.Print("Duration>")
+	fmt.Scan(&log.Duration)
 
-	fmt.Printf("Studied %s for %d hours\n", subject, time)
+	return log
 }
