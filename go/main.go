@@ -10,12 +10,21 @@ type Log struct {
 }
 
 func main() {
-	log := inputLog()
+	// 入力するデータの件数
+	var n int
+	fmt.Print("How many logs?>")
+	fmt.Scan(&n)
 
-	fmt.Printf("Studied %s for %d hours\n", log.Subject, log.Duration)
+	logs := make([]Log, 0, n)
+
+	for i := 0; i < n; i++ {
+		logs = inputLog(logs)
+	}
+
+	showLogs(logs)
 }
 
-func inputLog() Log {
+func inputLog(logs []Log) []Log {
 	var log Log
 
 	fmt.Print("Subject>")
@@ -24,5 +33,17 @@ func inputLog() Log {
 	fmt.Print("Duration>")
 	fmt.Scan(&log.Duration)
 
-	return log
+	logs = append(logs, log)
+
+	return logs
+}
+
+func showLogs(logs []Log) {
+	fmt.Println("----------")
+
+	for i := 0; i < len(logs); i++ {
+		fmt.Printf("Studied %s for %d hours\n", logs[i].Subject, logs[i].Duration)
+	}
+
+	fmt.Println("----------")
 }
