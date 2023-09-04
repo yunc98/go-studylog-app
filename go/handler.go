@@ -105,3 +105,61 @@ func (hs *Handlers) SaveHandler(w http.ResponseWriter, r *http.Request) {
 	// logの保存に成功したら、ルートパスにリダイレクトする
 	http.Redirect(w, r, "/", http.StatusFound) // 302
 }
+
+var summaryTmpl = template.Must(template.New("summary").Parse(`<!DOCTYPE html>
+	<html>
+		<head>
+			<meta charset="utf-8"/>
+			<title>Study Log📚 Summary</title>
+			<script src="https://www.gstatic.com/charts/loader.js"></script>
+			<script>
+				google.charts.load('current', {'packages':['corechart']});
+				google.charts.setOnLoadCallback(drawChart);
+
+				function drawChart() {
+				var data = google.visualization.arrayToDataTable([
+					['Subject', 'Duration'],
+					{{- range . -}}
+					['{{js .Subject}}', {{.Duration}}],
+					{{- end -}}
+				]);
+			
+			var options = { title: 'Percentage' };
+			var chart = new google.visualization.PieChart(document.getElementById('piechart'));
+			chart.draw(data, options);
+			}
+			</script>
+		</head>
+		<body>
+			<h1>Summary</h1>
+			{{- if . -}}
+			<div id="piechart" style="width:400px; height:300px;"></div>
+			<table border="1">
+				<tr><th>Subject</th><th>Total/th><th>Average</th></tr>
+				{{- range .}}
+				<tr><td>{{.Subject}}</td><td>{{.Sum}}円</td><td>{{.Avg}}円</tr>
+				{{- end}}
+			</table>
+			{{- else}}
+				No record
+			{{- end}}
+
+			<div><a href="/">Back</a></div>
+		</body>
+	</html>
+`))
+
+func (hs *Handlers) SummaryHandler(w http.ResponseWriter, r *http.Request) {
+	// summariesを取得する
+	summaries, err := hs.sl.GetSummaries()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError) // 500
+		return
+	}
+
+	// summariesをテンプレートに埋め込む
+	if err := summaryTmpl.Execute(w, summaries); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError) // 500
+		return
+	}
+}
