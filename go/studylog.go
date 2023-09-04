@@ -52,6 +52,7 @@ func (sl *StudyLog) AddLog(log *Log) error {
 
 // 最近追加したものを最大limit件だけ取得する
 // エラーが発生したら第2戻り値で返す
+// できれば、件数ではなく月次の制限を設けたSQL文にしたい -> とりあえす元々の仕様で
 func (sl *StudyLog) GetLogs(limit int) ([]*Log, error) {
 	const sqlStr = `SELECT * FROM logs`
 
@@ -65,10 +66,12 @@ func (sl *StudyLog) GetLogs(limit int) ([]*Log, error) {
 	// 取得した各rowをLog型の変数にスキャンする
 	for rows.Next() {
 		var log Log
+
 		err := rows.Scan(&log.ID, &log.Subject, &log.Duration)
 		if err != nil {
 			return nil, err
 		}
+
 		// logsスライスにスキャンしたrowsを追加する
 		logs = append(logs, &log)
 	}
@@ -80,4 +83,52 @@ func (sl *StudyLog) GetLogs(limit int) ([]*Log, error) {
 
 	// 取得したlogsスライスを返す
 	return logs, nil
+}
+
+type Summary struct {
+	Subject string
+	Count int
+	Sum int
+}
+
+// 集計結果を取得する
+func (sl *StudyLog) GetSummaries() ([]*Summary, error) {
+	const sqlStr = `
+		SELECT
+			subject,
+			COUNT(1) as count,
+			SUM(duration) as sum
+		FROM
+			logs
+		GROUP BY
+			subject
+	`
+
+	rows, err := sl.db.Query(sqlStr)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close() // 関数終了時にCloseが呼び出される
+
+	var summaries []*Summary
+	// 取得した各rowをSummary型の変数にスキャンする
+	for rows.Next() {
+		var s Summary
+
+		err := rows.Scan(&s.Subject, &s.Count, &s.Sum)
+		if err != nil {
+			return nil, err
+		}
+
+		// summariesスライスにスキャンしたrowsを追加する
+		summaries = append(summaries, &s)
+	}
+
+	// rows.Next()のループ中にエラーが発生したかチェックする
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// 取得したsummariesスライスを返す
+	return summaries, nil
 }
