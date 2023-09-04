@@ -132,3 +132,14 @@ func (sl *StudyLog) GetSummaries() ([]*Summary, error) {
 	// 取得したsummariesスライスを返す
 	return summaries, nil
 }
+
+// 平均を取得する
+func (s *Summary) ComputeAvg() float64 {
+	// Countが0だとゼロ除算になるため
+	// そのまま0を返す
+	if s.Count == 0 {
+		return 0
+	}
+
+	return float64(s.Sum) / float64(s.Count)
+}
