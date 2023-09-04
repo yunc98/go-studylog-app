@@ -49,3 +49,35 @@ func (sl *StudyLog) AddLog(log *Log) error {
 
 	return nil
 }
+
+// 最近追加したものを最大limit件だけ取得する
+// エラーが発生したら第2戻り値で返す
+func (sl *StudyLog) GetLogs(limit int) ([]*Log, error) {
+	const sqlStr = `SELECT * FROM logs`
+
+	rows, err := sl.db.Query(sqlStr, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close() // 関数終了時にCloseが呼び出される
+
+	var logs []*Log
+	// 取得した各rowをLog型の変数にスキャンする
+	for rows.Next() {
+		var log Log
+		err := rows.Scan(&log.ID, &log.Subject, &log.Duration)
+		if err != nil {
+			return nil, err
+		}
+		// logsスライスにスキャンしたrowsを追加する
+		logs = append(logs, &log)
+	}
+
+	// rows.Next()のループ中にエラーが発生したかチェックする
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// 取得したlogsスライスを返す
+	return logs, nil
+}
