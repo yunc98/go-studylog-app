@@ -3,6 +3,7 @@ package main
 import (
 	"html/template"
 	"net/http"
+	"strconv"
 )
 
 // HTTPハンドラを集めた型
@@ -64,3 +65,43 @@ func (hs *Handlers) ListHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// 保存するハンドラ
+func (hs *Handlers) SaveHandler(w http.ResponseWriter, r *http.Request) {
+	// リクエストがPOSTメソッドかチェックする
+	if r.Method != http.MethodPost {
+		code := http.StatusMethodNotAllowed // 405
+		http.Error(w, http.StatusText(code), code)
+		return
+	}
+
+	// リクエストのフォームからsubjectフィールドの値を取得する
+	subject := r.FormValue("subject")
+	if subject == "" {
+		// 空の文字列だったら、400を返す
+		http.Error(w, "Subject not entered", http.StatusBadRequest)
+		return
+	}
+
+	// リクエストのフォームからdurationフィールドの値を取得して、int(整数)に変換する
+	duration, err := strconv.Atoi(r.FormValue("duration"))
+	if err != nil {
+		// intに変換できなかったら、400を返す
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// 取得した値をもとに、新しいLogインスタンスを作成する
+	log := &Log{
+		Subject: subject,
+		Duration: duration,
+	}
+
+	// logを保存する
+	if err := hs.sl.AddLog(log); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError) // 500
+		return
+	}
+
+	// logの保存に成功したら、ルートパスにリダイレクトする
+	http.Redirect(w, r, "/", http.StatusFound) // 302
+}
