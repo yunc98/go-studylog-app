@@ -38,3 +38,14 @@ func (sl *StudyLog) CreateTable() error {
 }
 
 
+// 新しいデータベースにLogを追加する
+func (sl *StudyLog) AddLog(log *Log) error {
+	const sqlStr = `INSERT INTO logs(subject, duration) VALUR (?,?);`
+
+	_, err := sl.db.Exec(sqlStr, log.Subject, log.Duration)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
