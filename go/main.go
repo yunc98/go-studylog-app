@@ -1,49 +1,52 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"time"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
-type Log struct {
-	Subject string
-	Duration int
-}
+var (
+	user = os.Getenv("DB_USER")
+	pass = os.Getenv("DB_PASS")
+	dbname = os.Getenv("DB_NAME")
+)
 
 func main() {
-	// 入力するデータの件数
-	var n int
-	fmt.Print("How many logs?>")
-	fmt.Scan(&n)
+	// MySQL接続
+	dsn := fmt.Sprintf("%s:%s@tcp(db:3306)/%s?charset=utf8mb4&parseTime=True&loc=Local", user, pass, dbname)
+	db, err := sql.Open("mysql", dsn)
 
-	logs := make([]Log, 0, n)
-
-	for i := 0; i < n; i++ {
-		logs = inputLog(logs)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	showLogs(logs)
-}
+	db.SetConnMaxLifetime(time.Minute * 3)
+	db.SetMaxOpenConns(1)
+	db.SetMaxIdleConns(1)
 
-func inputLog(logs []Log) []Log {
-	var log Log
+	// StudyLogをNewStudyLogを使って作成
+	sl := NewStudyLog(db)
 
-	fmt.Print("Subject>")
-	fmt.Scan(&log.Subject)
-
-	fmt.Print("Duration>")
-	fmt.Scan(&log.Duration)
-
-	logs = append(logs, log)
-
-	return logs
-}
-
-func showLogs(logs []Log) {
-	fmt.Println("----------")
-
-	for i := 0; i < len(logs); i++ {
-		fmt.Printf("Studied %s for %d hours\n", logs[i].Subject, logs[i].Duration)
+	// テーブルを作成
+	if err := sl.CreateTable(); err != nil {
+		log.Fatal(err)
 	}
 
-	fmt.Println("----------")
+	// HandlersをNewHandlersを使って作成
+	hs := NewHandlers(sl)
+
+	// ハンドラの登録
+	http.HandleFunc("/", hs.ListHandler)
+	http.HandleFunc("/save", hs.SaveHandler)
+	http.HandleFunc("/summary", hs.SummaryHandler)
+	
+	fmt.Println("http://localhost:8080 で起動中...")
+	// HTTPサーバーを起動する
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
