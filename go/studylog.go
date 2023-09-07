@@ -24,9 +24,9 @@ func NewStudyLog(db *sql.DB) *StudyLog {
 // テーブルがなかったら作成する
 func (sl *StudyLog) CreateTable() error {
 	const sqlStr = `CREATE TABLE IF NOT EXISTS logs(
-		id INTEGER PRIMARY KEY,
-		subject TEXT NOT NULL,
-		duration INTEGER NOT NULL
+		id INT AUTO_INCREMENT PRIMARY KEY,
+		subject VARCHAR(255) NOT NULL,
+		duration INT NOT NULL
 	);`
 
 	_, err := sl.db.Exec((sqlStr))
@@ -40,7 +40,7 @@ func (sl *StudyLog) CreateTable() error {
 
 // 新しいデータベースにLogを追加する
 func (sl *StudyLog) AddLog(log *Log) error {
-	const sqlStr = `INSERT INTO logs(subject, duration) VALUR (?,?);`
+	const sqlStr = `INSERT INTO logs(subject, duration) VALUES (?,?);`
 
 	_, err := sl.db.Exec(sqlStr, log.Subject, log.Duration)
 	if err != nil {
@@ -54,7 +54,7 @@ func (sl *StudyLog) AddLog(log *Log) error {
 // エラーが発生したら第2戻り値で返す
 // できれば、件数ではなく月次の制限を設けたSQL文にしたい -> とりあえす元々の仕様で
 func (sl *StudyLog) GetLogs(limit int) ([]*Log, error) {
-	const sqlStr = `SELECT * FROM logs`
+	const sqlStr = `SELECT * FROM logs LIMIT ?`
 
 	rows, err := sl.db.Query(sqlStr, limit)
 	if err != nil {
