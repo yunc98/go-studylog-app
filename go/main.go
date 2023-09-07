@@ -8,6 +8,8 @@ import (
 	"os"
 	"time"
 
+	_ "time/tzdata"
+
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -18,7 +20,6 @@ var (
 )
 
 func main() {
-	// MySQL接続
 	dsn := fmt.Sprintf("%s:%s@tcp(db:3306)/%s?charset=utf8mb4&parseTime=True&loc=Local", user, pass, dbname)
 	db, err := sql.Open("mysql", dsn)
 
