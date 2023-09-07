@@ -21,7 +21,7 @@ var listTmpl = template.Must(template.New("list").Parse(`<!DOCTYPE html>
 	<html>
 		<head>
 			<meta charset="utf-8"/>
-			<title>Study Log📚<title>
+			<title>Study Log📚</title>
 		</head>
 		<body>
 			<h1>Study Log📚</h1>
@@ -120,7 +120,7 @@ var summaryTmpl = template.Must(template.New("summary").Parse(`<!DOCTYPE html>
 				var data = google.visualization.arrayToDataTable([
 					['Subject', 'Duration'],
 					{{- range . -}}
-					['{{js .Subject}}', {{.Duration}}],
+					['{{js .Subject}}', {{.Sum}}],
 					{{- end -}}
 				]);
 			
@@ -135,9 +135,9 @@ var summaryTmpl = template.Must(template.New("summary").Parse(`<!DOCTYPE html>
 			{{- if . -}}
 			<div id="piechart" style="width:400px; height:300px;"></div>
 			<table border="1">
-				<tr><th>Subject</th><th>Total/th><th>Average</th></tr>
+				<tr><th>Subject</th><th>Total</th><th>Average</th></tr>
 				{{- range .}}
-				<tr><td>{{.Subject}}</td><td>{{.Sum}}円</td><td>{{.Avg}}円</tr>
+				<tr><td>{{.Subject}}</td><td>{{.Sum}} hours</td><td>{{.ComputeAvg}} hours</tr>
 				{{- end}}
 			</table>
 			{{- else}}
