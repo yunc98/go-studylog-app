@@ -1,8 +1,5 @@
-# 一旦最新バージョンを使用
-FROM golang:latest
-
-# アップデートとgitのインストール
-RUN apt-get update && apt-get install -y git
+# バージョン指定
+FROM golang:1.16
 
 WORKDIR /go/src
 
@@ -12,4 +9,6 @@ RUN go mod download
 
 COPY ./ ./
 
-CMD ["go", "run", "main.go"]
+RUN go build -v -o app
+
+CMD ["./app"]

@@ -8,8 +8,9 @@ services:
     container_name: go
     stdin_open: true
     tty: true
-    volumes:
-      - ./go:/go/src
+    command: ./app
+    # volumes:
+    #   - ./go:/go/src
     env_file:
       - ./.go_env
     environment:
