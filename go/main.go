@@ -31,11 +31,19 @@ func main() {
 	db.SetMaxOpenConns(1)
 	db.SetMaxIdleConns(1)
 
+	// SubjectをNewSubjectを使って作成
+	s := NewSubject(db)
+
 	// StudyLogをNewStudyLogを使って作成
 	sl := NewStudyLog(db)
 
-	// テーブルを作成
-	if err := sl.CreateTable(); err != nil {
+	// subjectsテーブルを作成
+	if err := s.CreateSubjectsTable(); err != nil {
+		log.Fatal(err)
+	}
+
+	// logsテーブルを作成
+	if err := sl.CreateLogsTable(); err != nil {
 		log.Fatal(err)
 	}
 
