@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type Item struct {
+type SubjectItem struct {
 	ID int
 	Subject string
 	CreatedAt time.Time
@@ -31,6 +31,18 @@ func (s *Subject) CreateSubjectsTable() error {
 	);`
 
 	_, err := s.db.Exec(sqlStr)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// 新しいデータベースにSubjectを追加する
+func (s *Subject) AddSubject(si *SubjectItem) error {
+	const sqlStr = `INSERT INTO subjects(subject) VALUE (?);`
+
+	_, err := s.db.Exec(sqlStr, si.Subject)
 	if err != nil {
 		return err
 	}

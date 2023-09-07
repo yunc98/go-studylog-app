@@ -8,12 +8,13 @@ import (
 
 // HTTPハンドラを集めた型
 type Handlers struct {
+	s  *Subject
 	sl *StudyLog
 }
 
 // Handlersを作成する
-func NewHandlers(sl *StudyLog) *Handlers {
-	return &Handlers{sl: sl}
+func NewHandlers(s *Subject, sl *StudyLog) *Handlers {
+	return &Handlers{s: s, sl: sl}
 }
 
 // ListHandlerで使用するテンプレート
@@ -25,8 +26,15 @@ var listTmpl = template.Must(template.New("list").Parse(`<!DOCTYPE html>
 		</head>
 		<body>
 			<h1>Study Log📚</h1>
+			<h2>Add new subject</h2>
+			<form method="post" action="/save-subject">
+				<label for="subject">Subject</label>
+				<input name="subject" type="text">
+				<input type="submit" value="Add">
+			</form>
+
 			<h2>Add new log</h2>
-			<form method="post" action="/save">
+			<form method="post" action="/save-log">
 				<label for="subject">Subject</label>
 				<input name="subject" type="text">
 				<label for="duration">Duration</label>
@@ -65,8 +73,40 @@ func (hs *Handlers) ListHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// 保存するハンドラ
-func (hs *Handlers) SaveHandler(w http.ResponseWriter, r *http.Request) {
+// subjectを保存するハンドラ
+func (hs *Handlers) SaveSubjectHandler(w http.ResponseWriter, r *http.Request) {
+	// リクエストがPOSTメソッドかチェックする
+	if r.Method != http.MethodPost {
+		code := http.StatusMethodNotAllowed // 405
+		http.Error(w, http.StatusText(code), code)
+		return
+	}
+	
+	// リクエストのフォームからsubjectフィールドの値を取得する
+	subject := r.FormValue("subject")
+	if subject == "" {
+		// 空の文字列だったら、400を返す
+		http.Error(w, "Subject not entered", http.StatusBadRequest)
+		return
+	}
+
+	// 取得した値をもとに、新しいSubjectItemインスタンスを作成する
+	subjectItem := &SubjectItem{
+		Subject: subject,
+	}
+
+	// subjectItemを保存する
+	if err := hs.s.AddSubject(subjectItem); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// logの保存に成功したら、ルートパスにリダイレクトする
+	http.Redirect(w, r, "/", http.StatusFound) // 302
+}
+
+// logを保存するハンドラ
+func (hs *Handlers) SaveLogHandler(w http.ResponseWriter, r *http.Request) {
 	// リクエストがPOSTメソッドかチェックする
 	if r.Method != http.MethodPost {
 		code := http.StatusMethodNotAllowed // 405

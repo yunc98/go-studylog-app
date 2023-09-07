@@ -20,6 +20,7 @@ var (
 )
 
 func main() {
+	// MySQL接続
 	dsn := fmt.Sprintf("%s:%s@tcp(db:3306)/%s?charset=utf8mb4&parseTime=True&loc=Local", user, pass, dbname)
 	db, err := sql.Open("mysql", dsn)
 
@@ -48,11 +49,12 @@ func main() {
 	}
 
 	// HandlersをNewHandlersを使って作成
-	hs := NewHandlers(sl)
+	hs := NewHandlers(s, sl)
 
 	// ハンドラの登録
 	http.HandleFunc("/", hs.ListHandler)
-	http.HandleFunc("/save", hs.SaveHandler)
+	http.HandleFunc("/save-subject", hs.SaveSubjectHandler)
+	http.HandleFunc("/save-log", hs.SaveLogHandler)
 	http.HandleFunc("/summary", hs.SummaryHandler)
 	
 	fmt.Println("http://localhost:8080 で起動中...")
