@@ -22,7 +22,7 @@ func NewStudyLog(db *sql.DB) *StudyLog {
 }
 
 // テーブルがなかったら作成する
-func (sl *StudyLog) CreateTable() error {
+func (sl *StudyLog) CreateLogsTable() error {
 	const sqlStr = `CREATE TABLE IF NOT EXISTS logs(
 		id INT AUTO_INCREMENT PRIMARY KEY,
 		subject VARCHAR(255) NOT NULL,
