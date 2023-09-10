@@ -49,3 +49,36 @@ func (s *Subject) AddSubject(si *SubjectItem) error {
 
 	return nil
 }
+
+// subjectsを取得する
+func (s *Subject) GetSubjects() ([]*SubjectItem, error) {
+	const sqlStr = `SELECT * FROM subjects`
+
+	rows, err := s.db.Query(sqlStr)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close() // 関数終了時にCloseが呼び出される
+
+	var subjects []*SubjectItem
+	// 取得した各rowをSubjectItem型の変数にスキャンする
+	for rows.Next() {
+		var subject SubjectItem
+
+		err := rows.Scan(&subject.ID, &subject.Subject, &subject.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+
+		// subjectsスライスにスキャンしたrowsを追加する
+		subjects = append(subjects, &subject)
+	}
+
+	// rows.Next()のループ中にエラーが発生したかチェックする
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// 取得したsubjectsスライスを返す
+	return subjects, nil
+}
