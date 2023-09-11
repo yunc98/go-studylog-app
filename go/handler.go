@@ -40,28 +40,23 @@ var listTmpl = template.Must(template.New("list").Parse(`<!DOCTYPE html>
 
 			<h2>Add new log</h2>
 			<form method="post" action="/save-log">
-				<label for="subject">Subject</label>
-				<input name="subject" type="text">
+				<label for="subject ">Subject</label>
+				<select name="subject" id="subject-select">
+					{{ range .Subjects }}
+					<option value="{{ .ID }}">{{ .Subject }}</option>
+					{{ end }}
+				</select>
 				<label for="duration">Duration</label>
 				<input name="duration" type="number">
 				<input type="submit" value="Add">
 			</form>
-
-			<h2>All subjects</h2>
-			<p>{{ len .Subjects }}</p>
-			<label for="subject-select">Choose a subject</label>
-			<select name="subjects" id="sebject-select">
-				{{ range .Subjects }}
-				<option value="{{ .ID }}">{{ .Subject }}</option>
-				{{ end }}
-			</select>
 
 			<h2>Latest logs : {{ len .Logs }}(<a href="/summary">Summary</a>)</h2>
 			{{- if .Logs -}}
 			<table border="1">
 				<tr><th>Subject</th><th>Duration</th></tr>
 				{{- range .Logs }}
-				<tr><td>{{ .Subject }}</td><td>{{ .Duration }}</td></tr>
+				<tr><td>{{ .SubjectId }}</td><td>{{ .Duration }}</td></tr>
 				{{- end }}
 			</table>
 			{{- else }}
@@ -141,13 +136,21 @@ func (hs *Handlers) SaveLogHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// リクエストのフォームからsubjectフィールドの値を取得する
-	subject := r.FormValue("subject")
-	if subject == "" {
+	subjectStr := r.FormValue("subject")
+	if subjectStr == "" {
 		// 空の文字列だったら、400を返す
 		http.Error(w, "Subject not entered", http.StatusBadRequest)
 		return
 	}
 
+	// subjectStrをint(整数)に変換する
+	subjectId, err := strconv.Atoi(subjectStr)
+	if err != nil {
+		// intに変換できなかったら、400を返す
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	
 	// リクエストのフォームからdurationフィールドの値を取得して、int(整数)に変換する
 	duration, err := strconv.Atoi(r.FormValue("duration"))
 	if err != nil {
@@ -158,7 +161,7 @@ func (hs *Handlers) SaveLogHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 取得した値をもとに、新しいLogインスタンスを作成する
 	log := &Log{
-		Subject: subject,
+		SubjectId: subjectId,
 		Duration: duration,
 	}
 
