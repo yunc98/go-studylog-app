@@ -17,7 +17,7 @@ func NewHandlers(s *Subject, sl *StudyLog) *Handlers {
 	return &Handlers{s: s, sl: sl}
 }
 
-type TemplateData struct {
+type ListTemplateData struct {
 	Subjects []*SubjectItem
 	Logs     []*Log
 }
@@ -72,6 +72,7 @@ func (hs *Handlers) ListHandler(w http.ResponseWriter, r *http.Request) {
 	subjects, err := hs.s.GetSubjects()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError) // 500
+		return
 	}
 
 	// 最新のlog10件を取得する
@@ -82,12 +83,12 @@ func (hs *Handlers) ListHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// dataにsubjectsとlogsをセットする
-	data := &TemplateData {
+	data := &ListTemplateData {
 		Subjects: subjects,
 		Logs:     logs,
 	}
 
-	// 取得したlogsをテンプレートに埋め込む
+	// dataをテンプレートに埋め込む
 	if err := listTmpl.Execute(w, data); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError) // 500
 		return
@@ -175,6 +176,11 @@ func (hs *Handlers) SaveLogHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound) // 302
 }
 
+type SummaryTemplateData struct {
+	SummariesBySubject []*SummaryBySubject
+	SummariesByMonth []*SummaryByMonth
+}
+
 var summaryTmpl = template.Must(template.New("summary").Parse(`<!DOCTYPE html>
 	<html>
 		<head>
@@ -186,27 +192,57 @@ var summaryTmpl = template.Must(template.New("summary").Parse(`<!DOCTYPE html>
 				google.charts.setOnLoadCallback(drawChart);
 
 				function drawChart() {
-				var data = google.visualization.arrayToDataTable([
-					['SubjectName', 'Duration'],
-					{{- range . -}}
-					['{{js .SubjectName }}', {{ .Sum }}],
-					{{- end -}}
-				]);
-			
-			var options = { title: 'Percentage' };
-			var chart = new google.visualization.PieChart(document.getElementById('piechart'));
-			chart.draw(data, options);
-			}
+					drawSubjectChart();
+					drawMonthChart();
+				}
+
+				function drawSubjectChart() {
+					var data = google.visualization.arrayToDataTable([
+						['SubjectName', 'Duration'],
+						{{- range .SummariesBySubject -}}
+						['{{js .SubjectName }}', {{ .Sum }}],
+						{{- end -}}
+					]);
+				
+					var options = { title: 'Percentage by Subject' };
+					var chart = new google.visualization.PieChart(document.getElementById('subject-piechart'));
+					chart.draw(data, options);
+				}
+
+				function drawMonthChart() {
+					var data = google.visualization.arrayToDataTable([
+						['Month', 'Duration'],
+						{{- range .SummariesByMonth -}}
+						['{{js .Month }}', {{ .Sum }}],
+						{{- end -}}
+					]);
+				
+					var options = { title: 'Total by Month' };
+					var chart = new google.visualization.BarChart(document.getElementById('month-barchart'));
+					chart.draw(data, options);
+				}
 			</script>
 		</head>
 		<body>
 			<h1>Summary</h1>
-			{{- if . -}}
-			<div id="piechart" style="width:400px; height:300px;"></div>
+			{{- if .SummariesBySubject -}}
+			<div id="subject-piechart" style="width:400px; height:300px;"></div>
 			<table border="1">
 				<tr><th>Subject</th><th>Total</th><th>Average</th></tr>
-				{{- range .}}
-				<tr><td>{{ .SubjectName }}</td><td>{{ .Sum }} hours</td><td>{{ .ComputeAvg }} hours</tr>
+				{{- range .SummariesBySubject }}
+				<tr><td>{{ .SubjectName }}</td><td>{{ .Sum }} hours</td><td>{{ .SubjectAvg }} hours</td></tr>
+				{{- end}}
+			</table>
+			{{- else}}
+				No record
+			{{- end}}
+
+			{{- if .SummariesByMonth -}}
+			<div id="month-barchart" style="width:400px; height:300px;"></div>
+			<table border="1">
+				<tr><th>Month</th><th>Total</th></tr>
+				{{- range .SummariesByMonth}}
+				<tr><td>{{ .Month }}</td><td>{{ .Sum }} hours</td></tr>
 				{{- end}}
 			</table>
 			{{- else}}
@@ -219,15 +255,27 @@ var summaryTmpl = template.Must(template.New("summary").Parse(`<!DOCTYPE html>
 `))
 
 func (hs *Handlers) SummaryHandler(w http.ResponseWriter, r *http.Request) {
-	// summariesを取得する
-	summaries, err := hs.sl.GetSummaries()
+	// Subject毎の集計結果を取得する
+	summariesBySubject, err := hs.sl.GetSummariesBySubject()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError) // 500
 		return
 	}
 
-	// summariesをテンプレートに埋め込む
-	if err := summaryTmpl.Execute(w, summaries); err != nil {
+	// Month毎の集計結果を取得する
+	summariesByMonth, err := hs.sl.GetSummariesByMonth()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError) // 500
+		return
+	}
+
+	data := &SummaryTemplateData {
+		SummariesBySubject: summariesBySubject,
+		SummariesByMonth: summariesByMonth,
+	}
+
+	// dataをテンプレートに埋め込む
+	if err := summaryTmpl.Execute(w, data); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError) // 500
 		return
 	}
