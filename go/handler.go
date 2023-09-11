@@ -49,9 +49,12 @@ var listTmpl = template.Must(template.New("list").Parse(`<!DOCTYPE html>
 
 			<h2>All subjects</h2>
 			<p>{{ len .Subjects }}</p>
-			{{ range .Subjects }}
-			<p>{{ .ID }} : {{ .Subject }}</p>
-			{{ end }}
+			<label for="subject-select">Choose a subject</label>
+			<select name="subjects" id="sebject-select">
+				{{ range .Subjects }}
+				<option value="{{ .ID }}">{{ .Subject }}</option>
+				{{ end }}
+			</select>
 
 			<h2>Latest logs : {{ len .Logs }}(<a href="/summary">Summary</a>)</h2>
 			{{- if .Logs -}}
