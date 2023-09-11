@@ -187,9 +187,9 @@ var summaryTmpl = template.Must(template.New("summary").Parse(`<!DOCTYPE html>
 
 				function drawChart() {
 				var data = google.visualization.arrayToDataTable([
-					['Subject', 'Duration'],
+					['SubjectName', 'Duration'],
 					{{- range . -}}
-					['{{js .Subject}}', {{.Sum}}],
+					['{{js .SubjectName }}', {{ .Sum }}],
 					{{- end -}}
 				]);
 			
@@ -206,7 +206,7 @@ var summaryTmpl = template.Must(template.New("summary").Parse(`<!DOCTYPE html>
 			<table border="1">
 				<tr><th>Subject</th><th>Total</th><th>Average</th></tr>
 				{{- range .}}
-				<tr><td>{{.Subject}}</td><td>{{.Sum}} hours</td><td>{{.ComputeAvg}} hours</tr>
+				<tr><td>{{ .SubjectName }}</td><td>{{ .Sum }} hours</td><td>{{ .ComputeAvg }} hours</tr>
 				{{- end}}
 			</table>
 			{{- else}}

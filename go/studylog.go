@@ -93,7 +93,7 @@ func (sl *StudyLog) GetLogs(limit int) ([]*Log, error) {
 }
 
 type Summary struct {
-	Subject string
+	SubjectName string
 	Count int
 	Sum int
 }
@@ -102,13 +102,14 @@ type Summary struct {
 func (sl *StudyLog) GetSummaries() ([]*Summary, error) {
 	const sqlStr = `
 		SELECT
-			subject,
+			subjects.subject,
 			COUNT(1) as count,
 			SUM(duration) as sum
 		FROM
 			logs
+		LEFT JOIN subjects ON logs.subjectId = subjects.id
 		GROUP BY
-			subject
+			logs.subjectId
 	`
 
 	rows, err := sl.db.Query(sqlStr)
@@ -122,7 +123,7 @@ func (sl *StudyLog) GetSummaries() ([]*Summary, error) {
 	for rows.Next() {
 		var s Summary
 
-		err := rows.Scan(&s.Subject, &s.Count, &s.Sum)
+		err := rows.Scan(&s.SubjectName, &s.Count, &s.Sum)
 		if err != nil {
 			return nil, err
 		}
