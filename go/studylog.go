@@ -2,12 +2,14 @@ package main
 
 import (
 	"database/sql"
+	"time"
 )
 
 type Log struct {
 	ID       int
-	Subject  string
+	SubjectId  int
 	Duration int
+	CreatedAt time.Time
 }
 
 // StudyLogの処理を行う型
@@ -26,7 +28,8 @@ func (sl *StudyLog) CreateLogsTable() error {
 	const sqlStr = `CREATE TABLE IF NOT EXISTS logs(
 		id INT AUTO_INCREMENT PRIMARY KEY,
 		subject VARCHAR(255) NOT NULL,
-		duration INT NOT NULL
+		duration INT NOT NULL,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);`
 
 	_, err := sl.db.Exec((sqlStr))
@@ -42,7 +45,7 @@ func (sl *StudyLog) CreateLogsTable() error {
 func (sl *StudyLog) AddLog(log *Log) error {
 	const sqlStr = `INSERT INTO logs(subject, duration) VALUES (?,?);`
 
-	_, err := sl.db.Exec(sqlStr, log.Subject, log.Duration)
+	_, err := sl.db.Exec(sqlStr, log.SubjectId, log.Duration)
 	if err != nil {
 		return err
 	}
@@ -67,7 +70,7 @@ func (sl *StudyLog) GetLogs(limit int) ([]*Log, error) {
 	for rows.Next() {
 		var log Log
 
-		err := rows.Scan(&log.ID, &log.Subject, &log.Duration)
+		err := rows.Scan(&log.ID, &log.SubjectId, &log.Duration, &log.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
