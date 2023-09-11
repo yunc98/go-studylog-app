@@ -17,6 +17,11 @@ func NewHandlers(s *Subject, sl *StudyLog) *Handlers {
 	return &Handlers{s: s, sl: sl}
 }
 
+type TemplateData struct {
+	Subjects []*SubjectItem
+	Logs     []*Log
+}
+
 // ListHandlerで使用するテンプレート
 var listTmpl = template.Must(template.New("list").Parse(`<!DOCTYPE html>
 	<html>
@@ -42,33 +47,51 @@ var listTmpl = template.Must(template.New("list").Parse(`<!DOCTYPE html>
 				<input type="submit" value="Add">
 			</form>
 
-			<h2>Latest logs : {{len .}}(<a href="/summary">Summary</a>)</h2>
-			{{- if . -}}
+			<h2>All subjects</h2>
+			<p>{{ len .Subjects }}</p>
+			{{ range .Subjects }}
+			<p>{{ .ID }} : {{ .Subject }}</p>
+			{{ end }}
+
+			<h2>Latest logs : {{ len .Logs }}(<a href="/summary">Summary</a>)</h2>
+			{{- if .Logs -}}
 			<table border="1">
 				<tr><th>Subject</th><th>Duration</th></tr>
-				{{- range .}}
-				<tr><td>{{.Subject}}</td><td>{{.Duration}}</td></tr>
-				{{- end}}
+				{{- range .Logs }}
+				<tr><td>{{ .Subject }}</td><td>{{ .Duration }}</td></tr>
+				{{- end }}
 			</table>
-			{{- else}}
+			{{- else }}
 				No record
-			{{- end}}
+			{{- end }}
 		</body>
 	</html>
 `))
 
 // 最新の入力データを表示するハンドラ
 func (hs *Handlers) ListHandler(w http.ResponseWriter, r *http.Request) {
-	// 最新の10件を取得する
+	// subjectsを表示する
+	subjects, err := hs.s.GetSubjects()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError) // 500
+	}
+
+	// 最新のlog10件を取得する
 	logs, err := hs.sl.GetLogs(10)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError) // 500
 		return
 	}
 
+	// dataにsubjectsとlogsをセットする
+	data := &TemplateData {
+		Subjects: subjects,
+		Logs:     logs,
+	}
+
 	// 取得したlogsをテンプレートに埋め込む
-	if err := listTmpl.Execute(w, logs); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := listTmpl.Execute(w, data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError) // 500
 		return
 	}
 }
@@ -97,7 +120,7 @@ func (hs *Handlers) SaveSubjectHandler(w http.ResponseWriter, r *http.Request) {
 
 	// subjectItemを保存する
 	if err := hs.s.AddSubject(subjectItem); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError) // 500
 		return
 	}
 
