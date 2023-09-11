@@ -56,7 +56,7 @@ var listTmpl = template.Must(template.New("list").Parse(`<!DOCTYPE html>
 			<table border="1">
 				<tr><th>Subject</th><th>Duration</th></tr>
 				{{- range .Logs }}
-				<tr><td>{{ .SubjectId }}</td><td>{{ .Duration }}</td></tr>
+				<tr><td>{{ .SubjectName }}</td><td>{{ .Duration }}</td></tr>
 				{{- end }}
 			</table>
 			{{- else }}

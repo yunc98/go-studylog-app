@@ -8,6 +8,7 @@ import (
 type Log struct {
 	ID       int
 	SubjectId  int
+	SubjectName string
 	Duration int
 	CreatedAt time.Time
 }
@@ -27,7 +28,7 @@ func NewStudyLog(db *sql.DB) *StudyLog {
 func (sl *StudyLog) CreateLogsTable() error {
 	const sqlStr = `CREATE TABLE IF NOT EXISTS logs(
 		id INT AUTO_INCREMENT PRIMARY KEY,
-		subject VARCHAR(255) NOT NULL,
+		subjectId INT NOT NULL,
 		duration INT NOT NULL,
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);`
@@ -43,7 +44,7 @@ func (sl *StudyLog) CreateLogsTable() error {
 
 // 新しいデータベースにLogを追加する
 func (sl *StudyLog) AddLog(log *Log) error {
-	const sqlStr = `INSERT INTO logs(subject, duration) VALUES (?,?);`
+	const sqlStr = `INSERT INTO logs(subjectId, duration) VALUES (?,?);`
 
 	_, err := sl.db.Exec(sqlStr, log.SubjectId, log.Duration)
 	if err != nil {
@@ -57,7 +58,10 @@ func (sl *StudyLog) AddLog(log *Log) error {
 // エラーが発生したら第2戻り値で返す
 // できれば、件数ではなく月次の制限を設けたSQL文にしたい -> とりあえす元々の仕様で
 func (sl *StudyLog) GetLogs(limit int) ([]*Log, error) {
-	const sqlStr = `SELECT * FROM logs LIMIT ?`
+	const sqlStr = `SELECT logs.id, logs.subjectId, subjects.subject, logs.duration
+		FROM logs
+		LEFT JOIN subjects ON logs.subjectId = subjects.id
+		LIMIT ?`
 
 	rows, err := sl.db.Query(sqlStr, limit)
 	if err != nil {
@@ -70,7 +74,7 @@ func (sl *StudyLog) GetLogs(limit int) ([]*Log, error) {
 	for rows.Next() {
 		var log Log
 
-		err := rows.Scan(&log.ID, &log.SubjectId, &log.Duration, &log.CreatedAt)
+		err := rows.Scan(&log.ID, &log.SubjectId, &log.SubjectName, &log.Duration)
 		if err != nil {
 			return nil, err
 		}
